@@ -2,6 +2,7 @@
 #include <MFRC522Extended.h>
 #include <deprecated.h>
 #include <require_cpp11.h>
+#include <SPI.h>
 
 #include <EepromAT24C32.h>
 #include <ThreeWire.h>
@@ -15,35 +16,20 @@
 
 #include <LiquidCrystal_I2C.h>
 
-#define RST_PIN 9
-#define SS_PIN 10
+#define RST_PIN 13
+#define SS_PIN 17
+//#define BUZZER_PIN 36
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); //Define o LCD com o módulo I2C
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);  //Cria uma instância do leitor
 
-ThreeWire myWire(4,5,2); // IO, SCLK, CE
+ThreeWire myWire(21,22,12); // IO, SCLK, CE
 RtcDS1302<ThreeWire> Rtc(myWire); //Cria o clock com base nos fios declarados no myWire
 
 long membros[40];
-char nomeMembros[40][50];
-
-void printDateTime(const RtcDateTime& dt) //Função que imprime a data e hora no terminal serial do Arduino
-{
-    char datestring[20];
-
-    snprintf_P(datestring, 
-            countof(datestring),
-            PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-            dt.Month(),
-            dt.Day(),
-            dt.Year(),
-            dt.Hour(),
-            dt.Minute(),
-            dt.Second() );
-    Serial.print(datestring);
-}
+char nomeMembros[5][40];
 
 
 void inicializaMembros() 
@@ -52,10 +38,23 @@ void inicializaMembros()
     membros[i] = NULL;
     
   membros[0] = 4294941194;
-  strcpy(nomeMembros[0], "Matheus Monteiro Huebra Perdigão");  
+  strcpy(nomeMembros[0], "Matheus Monteiro Huebra Perdigão");
+
+  membros[1] = 19055;
+  strcpy(nomeMembros[1], "Luisa Reis Ribeiro");
+
+  membros[2] = 21103;
+  strcpy(nomeMembros[2], "Maria Vitória Rodrigues Peixoto");
+
+  membros[3] = 4294944048;
+  strcpy(nomeMembros[3], "Lucas Vieira Metzker");
+
+  membros[4] = 546;
+  strcpy(nomeMembros[3], "Gustavo Couto Silva");
+
 }
 
-
+/*
 char comparaCartao (long uid)
 {
   for (int i = 0; i < 40; i ++) {
@@ -64,7 +63,7 @@ char comparaCartao (long uid)
     }
   }
 }
-
+*/
 
 unsigned long getID() //Pega somente o UID (Unique ID) do cartão lido e "transforma" em int 
 {
@@ -98,6 +97,8 @@ void setup() {
 
   //Termina os testes no LCD para verificar funcionamento do mesmo
 
+  SPI.begin();
+
   Serial.begin(9600); //Inicia a comunicação com o PC
 
     Serial.print("compiled: ");
@@ -107,7 +108,6 @@ void setup() {
     Rtc.Begin(); //Inicia o Real Time Clock
 
     RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-    printDateTime(compiled);
     Serial.println();
 
     if (!Rtc.IsDateTimeValid()) 
@@ -116,6 +116,7 @@ void setup() {
         Serial.println("O módulo RTC está errado, possívelmente devido a bateria ou comprometimento do componente físico");
         Rtc.SetDateTime(compiled);
     }
+
 
     if (Rtc.GetIsWriteProtected())
     {
@@ -161,7 +162,6 @@ char horario[20] = "\0";
 
 RtcDateTime now = Rtc.GetDateTime(); //Pega a data e horário atual
 
-  printDateTime(now); //Printa os valores no terminal serial
   Serial.println();
 
     if (!now.IsValid()) //Testa o horário e verifica se é válido
@@ -197,8 +197,7 @@ RtcDateTime now = Rtc.GetDateTime(); //Pega a data e horário atual
         {
           Serial.print("Card detected, UID: "); 
           Serial.println(uid);
-
-          Serial.print(comparaCartao(uid));
+          Serial.println();
         }
     }
 
